@@ -1,0 +1,141 @@
+/* Laptop-first, old-school 2004 admin feel */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, Verdana, sans-serif;
+  background: #e6e6e6;
+  color: #222;
+}
+
+#page {
+  width: 1100px;
+  max-width: 100%;
+  margin: 20px auto;
+  background: #f2f2f2;
+  border: 1px solid #c0c0c0;
+  padding: 15px;
+}
+
+#header {
+  border-bottom: 1px solid #c0c0c0;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+}
+
+#header h1 {
+  font-size: 26px;
+  font-weight: bold;
+  color: #111;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #555;
+  margin-top: 4px;
+}
+
+#main {
+  display: block;
+}
+
+#form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+#task-input {
+  flex: 1 1 400px;
+  min-width: 240px;
+  padding: 8px;
+  border: 1px solid #b0b0b0;
+  background: #fff;
+  font-size: 14px;
+  color: #222;
+}
+
+#task-input:focus {
+  outline: none;
+  border-color: #888;
+}
+
+#add-button {
+  padding: 8px 16px;
+  border: 1px solid #8c8c8c;
+  background: #d0d0d0;
+  color: #111;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#add-button:hover {
+  background: #c0c0c0;
+}
+
+#add-button:active {
+  background: #b0b0b0;
+}
+
+#list-box {
+  border: 1px solid #c0c0c0;
+  background: #fafafa;
+  padding: 10px;
+}
+
+#list-box h2 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #111;
+  border-bottom: 1px solid #d0d0d0;
+  padding-bottom: 6px;
+}
+
+#task-list {
+  display: block;
+}
+
+.empty {
+  font-size: 13px;
+  color: #666;
+}
+
+.task-item {
+  padding: 8px;
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  margin-bottom: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.task-item:hover {
+  background: #f0f0f0;
+}
+
+.task-item.completed {
+  text-decoration: line-through;
+  color: #888;
+  background: #f7f7f7;
+}
+
+#footer {
+  margin-top: 15px;
+  border-top: 1px solid #c0c0c0;
+  padding-top: 10px;
+  font-size: 12px;
+  color: #555;
+  text-align: left;
+}
+
+@media (max-width: 1024px) {
+  #page {
+    margin: 10px;
+  }
+}
+
