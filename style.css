@@ -1,6 +1,6 @@
 /* ============================================
-   NEON TO-DO LIST - Futuristic & Aesthetic UI
-   WITH EXTREME GLASSMORPHISM SKIN
+   3D NEON TO-DO LIST - Futuristic & Aesthetic UI
+   WITH 3D ANIMATIONS & GLASSMORPHISM
    ============================================ */
 
 * {
@@ -76,51 +76,24 @@ body {
   justify-content: center;
   align-items: center;
   padding: 20px;
-  overflow-x: hidden;
+  overflow: hidden;
   line-height: 1.6;
+  position: relative;
 }
 
 [data-theme="light"] body {
   background: linear-gradient(135deg, #f0f0f8 0%, #e0e0f0 50%, #f0f0f8 100%);
 }
 
-/* Particles Background */
-.particles {
+/* 3D Canvas */
+#three-canvas {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
   z-index: 0;
-  overflow: hidden;
-}
-
-.particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: var(--accent-primary);
-  border-radius: 50%;
-  opacity: 0.6;
-  animation: float 15s infinite linear;
-}
-
-@keyframes float {
-  0% {
-    transform: translateY(0) translateX(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.6;
-  }
-  90% {
-    opacity: 0.6;
-  }
-  100% {
-    transform: translateY(-100vh) translateX(100px);
-    opacity: 0;
-  }
+  pointer-events: none;
 }
 
 /* Main Container - EXTREME GLASSMORPHISM */
@@ -139,9 +112,6 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
   animation: fadeIn 0.8s ease-out;
-  
-  /* Double glass effect */
-  position: relative;
 }
 
 .container::before {
@@ -221,18 +191,31 @@ header::before {
 .logo i {
   font-size: 1.8rem;
   color: var(--accent-primary);
-  animation: pulse 2s infinite;
+  animation: pulse 2s infinite, rotate3d 10s infinite linear;
   text-shadow: 0 0 10px var(--accent-primary);
+  transform-style: preserve-3d;
 }
 
 @keyframes pulse {
   0%, 100% {
-    transform: scale(1);
+    transform: scale(1) rotateY(0deg);
     text-shadow: 0 0 10px var(--accent-primary);
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.1) rotateY(10deg);
     text-shadow: 0 0 20px var(--accent-primary), 0 0 30px var(--accent-primary);
+  }
+}
+
+@keyframes rotate3d {
+  0% {
+    transform: rotateY(0deg) rotateX(0deg);
+  }
+  50% {
+    transform: rotateY(180deg) rotateX(0deg);
+  }
+  100% {
+    transform: rotateY(360deg) rotateX(0deg);
   }
 }
 
@@ -243,6 +226,16 @@ header::before {
   letter-spacing: 2px;
   color: var(--text-primary);
   text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  animation: textGlow 3s infinite alternate;
+}
+
+@keyframes textGlow {
+  from {
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+  }
+  to {
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+  }
 }
 
 .theme-toggle {
@@ -255,11 +248,21 @@ header::before {
   font-size: 1.4rem;
   color: var(--accent-secondary);
   text-shadow: 0 0 5px var(--accent-secondary);
+  animation: float 3s infinite ease-in-out;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
 .theme-toggle:hover i {
   color: var(--accent-primary);
-  transform: rotate(30deg);
+  transform: rotate(30deg) scale(1.2);
   text-shadow: 0 0 15px var(--accent-primary);
 }
 
@@ -285,6 +288,7 @@ main {
   border: 1px solid var(--glass-border);
   transition: var(--transition);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform-style: preserve-3d;
 }
 
 .input-wrapper:focus-within {
@@ -292,6 +296,16 @@ main {
   box-shadow: 
     0 0 15px rgba(0, 255, 136, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  animation: inputGlow 1.5s infinite alternate;
+}
+
+@keyframes inputGlow {
+  from {
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  to {
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
 }
 
 #task-input {
@@ -324,15 +338,16 @@ main {
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+  transform-style: preserve-3d;
 }
 
 #add-button:hover {
-  transform: scale(1.05);
+  transform: scale(1.05) rotateX(5deg);
   box-shadow: 0 0 20px var(--accent-primary);
 }
 
 #add-button:active {
-  transform: scale(0.95);
+  transform: scale(0.95) rotateX(-5deg);
 }
 
 /* Tasks Section - GLASSMORPHISM */
@@ -363,10 +378,30 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
+  animation: headerGlow 4s infinite alternate;
+}
+
+@keyframes headerGlow {
+  from {
+    text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+  }
+  to {
+    text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+  }
 }
 
 .tasks-header h2 i {
   color: var(--accent-primary);
+  animation: iconSpin 8s infinite linear;
+}
+
+@keyframes iconSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .task-count {
@@ -377,6 +412,16 @@ main {
   color: var(--accent-primary);
   font-weight: 600;
   box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+  animation: countPulse 2s infinite;
+}
+
+@keyframes countPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 #task-list {
@@ -390,6 +435,16 @@ main {
   color: var(--text-tertiary);
   font-style: italic;
   padding: 20px;
+  animation: fadePulse 2s infinite;
+}
+
+@keyframes fadePulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Task Item - GLASSMORPHISM */
@@ -406,9 +461,10 @@ main {
   border-radius: var(--border-radius-sm);
   transition: var(--transition);
   cursor: pointer;
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.3s ease-out, taskFloat 6s infinite ease-in-out;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   overflow: hidden;
+  transform-style: preserve-3d;
 }
 
 .task-item::before {
@@ -424,16 +480,37 @@ main {
   opacity: 0.5;
 }
 
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) rotateY(-10deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotateY(0deg);
+  }
+}
+
+@keyframes taskFloat {
+  0%, 100% {
+    transform: translateY(0) rotateX(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotateX(2deg);
+  }
+}
+
 .task-item:hover {
   border-color: var(--accent-primary);
   box-shadow: 
     0 0 20px rgba(0, 255, 136, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform: translateX(4px);
+  transform: translateX(4px) rotateY(5deg) !important;
 }
 
 .task-item.completed {
   opacity: 0.6;
+  animation: none;
 }
 
 .task-item.completed .task-text {
@@ -454,11 +531,22 @@ main {
   flex-shrink: 0;
   background: var(--glass-bg-2);
   backdrop-filter: blur(10px);
+  transform-style: preserve-3d;
 }
 
 .task-item.completed .task-checkbox {
   background: var(--accent-primary);
   box-shadow: 0 0 15px var(--accent-primary);
+  animation: checkboxGlow 1s infinite alternate;
+}
+
+@keyframes checkboxGlow {
+  from {
+    box-shadow: 0 0 15px var(--accent-primary);
+  }
+  to {
+    box-shadow: 0 0 25px var(--accent-primary), 0 0 35px var(--accent-primary);
+  }
 }
 
 .task-checkbox i {
@@ -466,10 +554,25 @@ main {
   font-size: 0.8rem;
   opacity: 0;
   transition: var(--transition);
+  transform: scale(0.8);
 }
 
 .task-item.completed .task-checkbox i {
   opacity: 1;
+  transform: scale(1);
+  animation: checkPop 0.3s ease-out;
+}
+
+@keyframes checkPop {
+  0% {
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .task-text {
@@ -494,19 +597,29 @@ main {
   transition: var(--transition);
   font-size: 0.9rem;
   opacity: 0;
-  transform: scale(0.8);
+  transform: scale(0.8) rotate(0deg);
   z-index: 1;
 }
 
 .task-item:hover .delete-btn {
   opacity: 1;
-  transform: scale(1);
+  transform: scale(1) rotate(180deg);
 }
 
 .delete-btn:hover {
   background: rgba(255, 0, 170, 0.1);
-  transform: scale(1.1);
+  transform: scale(1.1) rotate(180deg) !important;
   box-shadow: 0 0 15px var(--accent-tertiary);
+  animation: deletePulse 0.5s infinite;
+}
+
+@keyframes deletePulse {
+  0%, 100% {
+    transform: scale(1.1) rotate(180deg);
+  }
+  50% {
+    transform: scale(1.15) rotate(180deg);
+  }
 }
 
 .delete-btn::before {
@@ -534,6 +647,16 @@ footer {
 footer i {
   color: var(--accent-primary);
   margin-right: 6px;
+  animation: footerIconSpin 10s infinite linear;
+}
+
+@keyframes footerIconSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Scrollbar Styling */

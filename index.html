@@ -4,24 +4,26 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Neon To-Do</title>
+  <title>3D Neon To-Do</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Three.js for 3D animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-  <!-- Floating Particles -->
-  <div class="particles" id="particles"></div>
+  <!-- 3D Canvas Container -->
+  <canvas id="three-canvas"></canvas>
   
   <!-- Main Container -->
   <div class="container">
     <!-- Header -->
     <header>
       <div class="logo">
-        <i class="fas fa-rocket"></i>
-        <h1>NEON TASKS</h1>
+        <i class="fas fa-cube"></i>
+        <h1>3D NEON TASKS</h1>
       </div>
       <div class="theme-toggle">
         <i class="fas fa-moon" id="theme-icon"></i>
@@ -59,7 +61,7 @@
 
     <!-- Footer -->
     <footer>
-      <p><i class="fas fa-code"></i> Built with love & neon</p>
+      <p><i class="fas fa-code"></i> Built with 3D & neon</p>
     </footer>
   </div>
 
