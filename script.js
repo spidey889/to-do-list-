@@ -1,381 +1,301 @@
-// ============================================
-// 3D NEON TO-DO LIST - Futuristic & Aesthetic UI
-// WITH DRAGONFLY ANIMATION & FLOATING OBJECTS
-// ============================================
+const taskInput = document.getElementById("task-input");
+const addButton = document.getElementById("add-button");
+const taskList = document.getElementById("task-list");
+const taskCount = document.getElementById("task-count");
+const themeIcon = document.getElementById("theme-icon");
 
-// DOM Elements
-const taskInput = document.getElementById('task-input');
-const addButton = document.getElementById('add-button');
-const taskList = document.getElementById('task-list');
-const taskCount = document.getElementById('task-count');
-const themeIcon = document.getElementById('theme-icon');
-
-// State
 let tasks = [];
-let theme = localStorage.getItem('theme') || 'dark';
+let theme = localStorage.getItem("theme") || "dark";
 
-// Three.js Variables
-let scene, camera, renderer, dragonfly, dragonflyWings = [];
-let clock = new THREE.Clock();
+let scene;
+let camera;
+let renderer;
+let dragon;
+let dragonMaterials;
+let sparks = [];
 
-// Initialize
-window.onload = function () {
+window.addEventListener("load", () => {
   loadTheme();
   loadTasks();
-  
-  // Check if Three.js is loaded
-  if (typeof THREE !== 'undefined') {
+
+  if (typeof THREE !== "undefined") {
     initThreeJS();
     animateThreeJS();
   } else {
-    console.error('Three.js not loaded!');
-    // Fallback: Show a message in the canvas area
-    const canvas = document.getElementById('three-canvas');
-    canvas.style.background = 'rgba(255, 0, 0, 0.1)';
+    document.getElementById("three-canvas").style.opacity = "0";
+    console.error("Three.js not loaded.");
   }
-  
-  // Event Listeners
-  addButton.onclick = addTask;
-  taskInput.onkeypress = function (e) {
-    if (e.key === 'Enter') {
+
+  addButton.addEventListener("click", addTask);
+  taskInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
       addTask();
     }
-  };
-  
-  themeIcon.parentElement.onclick = toggleTheme;
-  
-  // Handle window resize
-  window.addEventListener('resize', onWindowResize);
-};
-
-// ============================================
-// THEME MANAGEMENT
-// ============================================
+  });
+  themeIcon.closest(".theme-toggle").addEventListener("click", toggleTheme);
+  window.addEventListener("resize", onWindowResize);
+});
 
 function loadTheme() {
-  document.documentElement.setAttribute('data-theme', theme);
-  updateThemeIcon();
-  if (typeof THREE !== 'undefined') updateThreeJSTheme();
+  document.documentElement.setAttribute("data-theme", theme);
+  themeIcon.className = theme === "dark" ? "fas fa-sun" : "fas fa-moon";
+  updateThreeJSTheme();
 }
 
 function toggleTheme() {
-  theme = theme === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('theme', theme);
+  theme = theme === "dark" ? "light" : "dark";
+  localStorage.setItem("theme", theme);
   loadTheme();
 }
 
-function updateThemeIcon() {
-  themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-}
-
-// ============================================
-// 3D ANIMATIONS WITH THREE.JS - DRAGONFLY EDITION
-// ============================================
-
 function initThreeJS() {
-  // Scene
   scene = new THREE.Scene();
-  
-  // Camera
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, 0, 5);
-  
-  // Renderer
-  renderer = new THREE.WebGLRenderer({ 
-    canvas: document.getElementById('three-canvas'),
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 0.4, 8);
+
+  renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementById("three-canvas"),
     alpha: true,
-    antialias: true 
+    antialias: true,
+    preserveDrawingBuffer: true
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x000000, 0);
-  
-  // Add ambient light
-  const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
-  scene.add(ambientLight);
-  
-  // Add directional light
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  directionalLight.position.set(1, 1, 1);
-  scene.add(directionalLight);
-  
-  // Add point light for dragonfly glow
-  const pointLight = new THREE.PointLight(0x00ff88, 1, 50);
-  pointLight.position.set(0, 0, -5);
-  scene.add(pointLight);
-  
-  // Create dragonfly
-  createDragonfly();
-  
-  // Create some floating particles
-  createParticles();
-  
-  // Handle window resize
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+
+  const keyLight = new THREE.DirectionalLight(0xffd08a, 1.2);
+  keyLight.position.set(-3, 4, 6);
+  scene.add(keyLight);
+
+  const rimLight = new THREE.PointLight(0x4fd6a3, 1.5, 18);
+  rimLight.position.set(4, 1.5, 2);
+  scene.add(rimLight);
+
+  createDragon();
+  createSparks();
   onWindowResize();
 }
 
-function createDragonfly() {
-  // Colors based on theme
-  const bodyColor = theme === 'dark' ? 0x00ff88 : 0x00a368;
-  const wingColor = theme === 'dark' ? 0x00d4ff : 0x0077b6;
-  const eyeColor = theme === 'dark' ? 0xff00aa : 0xcc0077;
-  
-  // Dragonfly group
-  dragonfly = new THREE.Group();
-  scene.add(dragonfly);
-  
-  // Body (long cylinder)
-  const bodyGeometry = new THREE.CylinderGeometry(0.03, 0.05, 0.8, 16);
-  const bodyMaterial = new THREE.MeshPhongMaterial({
-    color: bodyColor,
-    shininess: 100,
-    specular: 0x111111,
-    emissive: bodyColor,
-    emissiveIntensity: 0.3
-  });
-  const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-  body.rotation.x = Math.PI / 2;
-  body.position.z = 0.4;
-  body.castShadow = true;
-  body.receiveShadow = true;
-  dragonfly.add(body);
-  
-  // Head (sphere)
-  const headGeometry = new THREE.SphereGeometry(0.06, 16, 16);
-  const headMaterial = new THREE.MeshPhongMaterial({
-    color: bodyColor,
-    shininess: 100,
-    emissive: bodyColor,
-    emissiveIntensity: 0.3
-  });
-  const head = new THREE.Mesh(headGeometry, headMaterial);
-  head.position.z = 0.8;
-  head.castShadow = true;
-  dragonfly.add(head);
-  
-  // Eyes (2 small spheres)
-  const eyeGeometry = new THREE.SphereGeometry(0.02, 8, 8);
-  const eyeMaterial = new THREE.MeshBasicMaterial({ 
-    color: eyeColor,
-    emissive: eyeColor,
-    emissiveIntensity: 0.8
-  });
-  
-  const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-  leftEye.position.set(0.03, 0.02, 0.85);
-  dragonfly.add(leftEye);
-  
-  const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-  rightEye.position.set(-0.03, 0.02, 0.85);
-  dragonfly.add(rightEye);
-  
-  // Wings (4 transparent wings)
-  const wingGeometry = new THREE.PlaneGeometry(0.3, 0.1);
-  const wingMaterial = new THREE.MeshPhongMaterial({
-    color: wingColor,
-    transparent: true,
-    opacity: 0.7,
-    side: THREE.DoubleSide,
-    shininess: 50
-  });
-  
-  // Front wings
-  const frontLeftWing = new THREE.Mesh(wingGeometry, wingMaterial);
-  frontLeftWing.position.set(0, 0, 0.5);
-  frontLeftWing.rotation.y = Math.PI / 4;
-  dragonfly.add(frontLeftWing);
-  dragonflyWings.push(frontLeftWing);
-  
-  const frontRightWing = new THREE.Mesh(wingGeometry, wingMaterial);
-  frontRightWing.position.set(0, 0, 0.5);
-  frontRightWing.rotation.y = -Math.PI / 4;
-  dragonfly.add(frontRightWing);
-  dragonflyWings.push(frontRightWing);
-  
-  // Back wings
-  const backLeftWing = new THREE.Mesh(wingGeometry, wingMaterial);
-  backLeftWing.position.set(0, 0, 0.2);
-  backLeftWing.rotation.y = Math.PI / 4;
-  dragonfly.add(backLeftWing);
-  dragonflyWings.push(backLeftWing);
-  
-  const backRightWing = new THREE.Mesh(wingGeometry, wingMaterial);
-  backRightWing.position.set(0, 0, 0.2);
-  backRightWing.rotation.y = -Math.PI / 4;
-  dragonfly.add(backRightWing);
-  dragonflyWings.push(backRightWing);
-  
-  // Position dragonfly
-  dragonfly.position.set(0, 0, -3);
-  dragonfly.userData = {
-    pathRadius: 4,
-    pathSpeed: 0.002,
-    pathOffset: Math.random() * Math.PI * 2,
-    wingFlapSpeed: 0.1,
-    wingFlapAmount: 0.2,
-    bodyWiggleSpeed: 0.05,
-    bodyWiggleAmount: 0.05
-  };
+function palette() {
+  return theme === "dark"
+    ? { body: 0x25352f, belly: 0xf4ad4c, wing: 0x4fd6a3, horn: 0xf3efe4, fire: 0xe86f7c }
+    : { body: 0x47604f, belly: 0xc57124, wing: 0x157d65, horn: 0x3b3328, fire: 0xb84758 };
 }
 
-function createParticles() {
-  const particleCount = 20;
-  const colors = [0x00ff88, 0x00d4ff, 0xff00aa];
-  
-  for (let i = 0; i < particleCount; i++) {
-    const geometry = new THREE.SphereGeometry(0.05, 8, 8);
-    const material = new THREE.MeshBasicMaterial({
-      color: colors[Math.floor(Math.random() * colors.length)],
-      transparent: true,
-      opacity: 0.8
-    });
-    
-    const particle = new THREE.Mesh(geometry, material);
-    particle.position.set(
-      (Math.random() - 0.5) * 20,
-      (Math.random() - 0.5) * 20,
-      (Math.random() - 0.5) * 10 - 5
-    );
-    
-    scene.add(particle);
-    
-    particle.userData = {
-      floatSpeed: Math.random() * 0.2 + 0.05,
-      floatOffset: Math.random() * Math.PI * 2,
-      floatDistance: Math.random() * 3 + 1
-    };
+function createDragon() {
+  const colors = palette();
+  dragon = new THREE.Group();
+  dragon.position.set(1.8, 0.2, -3.4);
+  dragon.userData = { baseX: 1.1, travelX: 1.35 };
+  scene.add(dragon);
+
+  const bodyMat = new THREE.MeshStandardMaterial({ color: colors.body, roughness: 0.36, metalness: 0.12 });
+  const bellyMat = new THREE.MeshStandardMaterial({ color: colors.belly, roughness: 0.48, metalness: 0.05 });
+  const wingMat = new THREE.MeshStandardMaterial({
+    color: colors.wing,
+    transparent: true,
+    opacity: 0.54,
+    side: THREE.DoubleSide,
+    roughness: 0.28,
+    metalness: 0.08
+  });
+  const hornMat = new THREE.MeshStandardMaterial({ color: colors.horn, roughness: 0.42 });
+  const fireMat = new THREE.MeshBasicMaterial({ color: colors.fire, transparent: true, opacity: 0.72 });
+  dragonMaterials = { bodyMat, bellyMat, wingMat, hornMat, fireMat };
+
+  const body = mesh(new THREE.SphereGeometry(0.7, 28, 18), bodyMat, [0, 0, 0], [1.4, 0.65, 0.75]);
+  const chest = mesh(new THREE.SphereGeometry(0.46, 24, 14), bellyMat, [0.48, -0.06, 0.08], [0.85, 0.55, 0.46]);
+  const neck = mesh(new THREE.CylinderGeometry(0.2, 0.32, 0.95, 18), bodyMat, [0.78, 0.34, 0], [1, 1, 1], [0, 0, -0.9]);
+  const head = mesh(new THREE.SphereGeometry(0.36, 24, 16), bodyMat, [1.34, 0.78, 0], [1.15, 0.75, 0.82]);
+  const snout = mesh(new THREE.ConeGeometry(0.2, 0.44, 16), bellyMat, [1.78, 0.78, 0], [1, 0.68, 0.78], [0, 0, -Math.PI / 2]);
+  const tail = mesh(new THREE.ConeGeometry(0.28, 1.65, 18), bodyMat, [-1.12, 0.02, 0], [1, 0.72, 0.72], [0, 0, Math.PI / 2]);
+
+  dragon.add(body, chest, neck, head, snout, tail);
+
+  addHorn(1.26, 1.04, 0.18, hornMat);
+  addHorn(1.26, 1.04, -0.18, hornMat);
+  addWing(0.12, 0.24, 0.5, 1, wingMat);
+  addWing(0.12, 0.24, -0.5, -1, wingMat);
+  addLegs(bodyMat, hornMat);
+
+  for (let i = 0; i < 7; i += 1) {
+    const scale = 0.22 - i * 0.015;
+    const spine = mesh(new THREE.ConeGeometry(scale, 0.34, 10), hornMat, [-0.55 + i * 0.28, 0.52 + i * 0.04, 0], [1, 1, 1], [Math.PI / 2, 0, 0]);
+    dragon.add(spine);
+  }
+
+  for (let i = 0; i < 7; i += 1) {
+    const flame = mesh(new THREE.SphereGeometry(0.06 + i * 0.01, 10, 8), fireMat, [2.08 + i * 0.17, 0.78 + Math.sin(i) * 0.04, 0], [1.25, 0.62, 0.62]);
+    flame.userData.flame = true;
+    dragon.add(flame);
   }
 }
 
+function addHorn(x, y, z, material) {
+  const horn = mesh(new THREE.ConeGeometry(0.07, 0.34, 12), material, [x, y, z], [1, 1, 1], [0.35, 0, -0.35]);
+  dragon.add(horn);
+}
+
+function addWing(x, y, z, side, material) {
+  const wing = new THREE.Group();
+  wing.position.set(x, y, z);
+  wing.userData.side = side;
+
+  const membrane = mesh(new THREE.ConeGeometry(0.82, 1.55, 3), material, [0, 0, side * 0.34], [1.25, 0.62, 0.1], [0.2, side * 0.35, -1.55]);
+  const bone = mesh(new THREE.CylinderGeometry(0.025, 0.035, 1.35, 10), material, [0, 0.08, side * 0.25], [1, 1, 1], [1.1, 0, side * 0.82]);
+
+  wing.add(membrane, bone);
+  dragon.add(wing);
+}
+
+function addLegs(bodyMaterial, clawMaterial) {
+  [[0.28, -0.42, 0.32], [-0.46, -0.42, 0.34], [0.28, -0.42, -0.32], [-0.46, -0.42, -0.34]].forEach(([x, y, z]) => {
+    const leg = mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.48, 12), bodyMaterial, [x, y, z], [1, 1, 1], [0.2, 0, 0.25]);
+    const claw = mesh(new THREE.ConeGeometry(0.045, 0.18, 10), clawMaterial, [x + 0.08, y - 0.24, z], [1, 1, 1], [0, 0, -Math.PI / 2]);
+    dragon.add(leg, claw);
+  });
+}
+
+function createSparks() {
+  const colors = palette();
+  for (let i = 0; i < 42; i += 1) {
+    const material = new THREE.MeshBasicMaterial({
+      color: i % 3 === 0 ? colors.ember : colors.wing,
+      transparent: true,
+      opacity: 0.38
+    });
+    const spark = mesh(new THREE.SphereGeometry(Math.random() * 0.025 + 0.012, 8, 8), material, [
+      (Math.random() - 0.5) * 12,
+      (Math.random() - 0.5) * 7,
+      Math.random() * -5 - 2
+    ]);
+    spark.userData = {
+      speed: Math.random() * 0.35 + 0.12,
+      drift: Math.random() * Math.PI * 2
+    };
+    scene.add(spark);
+    sparks.push(spark);
+  }
+}
+
+function mesh(geometry, material, position, scale = [1, 1, 1], rotation = [0, 0, 0]) {
+  const item = new THREE.Mesh(geometry, material);
+  item.position.set(...position);
+  item.scale.set(...scale);
+  item.rotation.set(...rotation);
+  return item;
+}
+
 function updateThreeJSTheme() {
-  if (!dragonfly) return;
-  
-  const bodyColor = theme === 'dark' ? 0x00ff88 : 0x00a368;
-  const wingColor = theme === 'dark' ? 0x00d4ff : 0x0077b6;
-  const eyeColor = theme === 'dark' ? 0xff00aa : 0xcc0077;
-  
-  dragonfly.children.forEach(child => {
-    if (child.geometry && child.geometry.type === 'CylinderGeometry') {
-      child.material.color.set(bodyColor);
-      child.material.emissive.set(bodyColor);
-    } else if (child.geometry && child.geometry.type === 'SphereGeometry') {
-      if (Math.abs(child.position.z - 0.85) < 0.06) {
-        child.material.color.set(eyeColor);
-      } else {
-        child.material.color.set(bodyColor);
-        if (child.material.emissive) {
-          child.material.emissive.set(bodyColor);
-        }
-      }
-    } else if (child.geometry && child.geometry.type === 'PlaneGeometry') {
-      child.material.color.set(wingColor);
-    }
+  if (!dragonMaterials) {
+    return;
+  }
+
+  const colors = palette();
+  dragonMaterials.bodyMat.color.set(colors.body);
+  dragonMaterials.bellyMat.color.set(colors.belly);
+  dragonMaterials.wingMat.color.set(colors.wing);
+  dragonMaterials.hornMat.color.set(colors.horn);
+  dragonMaterials.fireMat.color.set(colors.fire);
+
+  sparks.forEach((spark, index) => {
+    spark.material.color.set(index % 3 === 0 ? colors.ember : colors.wing);
   });
 }
 
 function animateThreeJS() {
   requestAnimationFrame(animateThreeJS);
-  
-  const delta = clock.getDelta();
-  const time = Date.now() * 0.001;
-  
-  // Animate dragonfly
-  if (dragonfly) {
-    const data = dragonfly.userData;
-    
-    // Circular path
-    dragonfly.position.x = Math.cos(time * data.pathSpeed + data.pathOffset) * data.pathRadius;
-    dragonfly.position.y = Math.sin(time * data.pathSpeed * 0.7 + data.pathOffset) * data.pathRadius * 0.5;
-    dragonfly.position.z = -3 + Math.sin(time * data.pathSpeed * 0.5 + data.pathOffset) * data.pathRadius * 0.3;
-    
-    // Rotate dragonfly to face direction of motion
-    const angle = Math.atan2(
-      Math.sin(time * data.pathSpeed + data.pathOffset) * data.pathSpeed * 0.7,
-      Math.cos(time * data.pathSpeed + data.pathOffset) * data.pathSpeed
-    );
-    dragonfly.rotation.y = angle;
-    
-    // Wing flapping
-    const wingFlap = Math.sin(time * data.wingFlapSpeed * 2) * data.wingFlapAmount;
-    dragonflyWings.forEach((wing, index) => {
-      if (index % 2 === 0) {
-        wing.rotation.x = wingFlap;
-      } else {
-        wing.rotation.x = -wingFlap;
+
+  const time = performance.now() * 0.001;
+
+  if (dragon) {
+    const baseX = dragon.userData.baseX || 1.1;
+    const travelX = dragon.userData.travelX || 1.35;
+    dragon.position.x = Math.sin(time * 0.32) * travelX + baseX;
+    dragon.position.y = Math.sin(time * 0.5) * 0.34 + 0.18;
+    dragon.rotation.y = Math.sin(time * 0.28) * 0.22 - 0.34;
+    dragon.rotation.z = Math.sin(time * 0.42) * 0.05;
+
+    dragon.children.forEach(child => {
+      if (child.userData.side) {
+        child.rotation.x = Math.sin(time * 3.1) * 0.18;
+        child.rotation.z = child.userData.side * (0.18 + Math.sin(time * 2.4) * 0.06);
       }
-    });
-    
-    // Body wiggle
-    dragonfly.children.forEach(child => {
-      if (child.geometry && child.geometry.type === 'CylinderGeometry') {
-        child.rotation.z = Math.sin(time * data.bodyWiggleSpeed) * data.bodyWiggleAmount;
+      if (child.userData.flame) {
+        const pulse = 0.7 + Math.sin(time * 5 + child.position.x * 4) * 0.25;
+        child.scale.set(pulse * 1.25, pulse * 0.62, pulse * 0.62);
+        child.material.opacity = 0.42 + pulse * 0.25;
       }
     });
   }
-  
-  // Animate particles
-  scene.children.forEach(child => {
-    if (child.userData.floatSpeed) {
-      child.position.y += Math.sin(time * child.userData.floatSpeed + child.userData.floatOffset) * 0.01 * child.userData.floatDistance;
+
+  sparks.forEach((spark, index) => {
+    spark.position.y += 0.006 * spark.userData.speed;
+    spark.position.x += Math.sin(time + spark.userData.drift) * 0.002;
+    spark.material.opacity = 0.18 + Math.sin(time * 1.3 + index) * 0.12;
+    if (spark.position.y > 4) {
+      spark.position.y = -4;
     }
   });
-  
+
   renderer.render(scene, camera);
 }
 
 function onWindowResize() {
-  if (!camera || !renderer) return;
+  if (!camera || !renderer) {
+    return;
+  }
+
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+
+  if (dragon) {
+    const compact = window.innerWidth < 640;
+    dragon.scale.setScalar(compact ? 0.78 : 1);
+    dragon.position.z = compact ? -4.2 : -3.4;
+    dragon.userData.baseX = compact ? 0.8 : 1.1;
+    dragon.userData.travelX = compact ? 0.62 : 1.35;
+  }
 }
 
-// ============================================
-// TASK MANAGEMENT
-// ============================================
-
 function loadTasks() {
-  const savedTasks = localStorage.getItem('tasks');
-  if (savedTasks) {
-    tasks = JSON.parse(savedTasks);
+  try {
+    tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  } catch {
+    tasks = [];
   }
   renderTasks();
 }
 
 function saveTasks() {
-  localStorage.setItem('tasks', JSON.stringify(tasks));
+  localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
 function addTask() {
   const text = taskInput.value.trim();
-  
+
   if (!text) {
-    taskInput.style.animation = 'shake 0.5s';
-    setTimeout(() => {
-      taskInput.style.animation = '';
-    }, 500);
+    taskInput.animate([
+      { transform: "translateX(0)" },
+      { transform: "translateX(-5px)" },
+      { transform: "translateX(5px)" },
+      { transform: "translateX(0)" }
+    ], { duration: 240 });
     return;
   }
-  
-  const task = {
-    id: Date.now(),
-    text: text,
-    done: false
-  };
-  
-  tasks.push(task);
+
+  tasks.push({ id: Date.now(), text, done: false });
+  taskInput.value = "";
   saveTasks();
-  taskInput.value = '';
   renderTasks();
 }
 
 function toggleTask(id) {
-  const taskIndex = tasks.findIndex(task => task.id === id);
-  if (taskIndex !== -1) {
-    tasks[taskIndex].done = !tasks[taskIndex].done;
-    saveTasks();
-    renderTasks();
-  }
+  tasks = tasks.map(task => task.id === id ? { ...task, done: !task.done } : task);
+  saveTasks();
+  renderTasks();
 }
 
 function deleteTask(id, event) {
@@ -386,50 +306,26 @@ function deleteTask(id, event) {
 }
 
 function renderTasks() {
-  if (tasks.length === 0) {
-    taskList.innerHTML = '<p class="empty-message">No tasks yet. Add one above!</p>';
-    taskCount.textContent = '0';
+  taskCount.textContent = tasks.length;
+
+  if (!tasks.length) {
+    taskList.innerHTML = '<p class="empty-message">No tasks yet. Add one above.</p>';
     return;
   }
-  
-  taskCount.textContent = tasks.length;
-  
-  let html = '';
-  tasks.forEach(task => {
-    const taskClass = task.done ? 'task-item completed' : 'task-item';
-    html += `
-      <div class="${taskClass}" onclick="toggleTask(${task.id})">
-        <div class="task-checkbox">
-          ${task.done ? '<i class="fas fa-check"></i>' : ''}
-        </div>
-        <span class="task-text">${escapeHtml(task.text)}</span>
-        <button class="delete-btn" onclick="deleteTask(${task.id}, event)">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-    `;
-  });
-  
-  taskList.innerHTML = html;
+
+  taskList.innerHTML = tasks.map(task => `
+    <div class="task-item${task.done ? " completed" : ""}" onclick="toggleTask(${task.id})">
+      <div class="task-checkbox">${task.done ? '<i class="fas fa-check"></i>' : ""}</div>
+      <span class="task-text">${escapeHtml(task.text)}</span>
+      <button class="delete-btn" type="button" aria-label="Delete task" onclick="deleteTask(${task.id}, event)">
+        <i class="fas fa-xmark"></i>
+      </button>
+    </div>
+  `).join("");
 }
 
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
-
 function escapeHtml(text) {
-  const div = document.createElement('div');
+  const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
-
-// Add shake animation for empty input
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-5px); }
-    40%, 80% { transform: translateX(5px); }
-  }
-`;
-document.head.appendChild(style);

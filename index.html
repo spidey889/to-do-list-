@@ -4,35 +4,30 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>To-Do</title>
+  <title>Dragon Tasks</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Load Three.js locally to avoid CDN issues -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dTQaAq2oQqfJY3YtC1T4P8YdBX7j3J6d2JJ6QvQvJ3J6" crossorigin="anonymous"></script>
+  <!-- Three.js powers the lightweight background dragon. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-  <!-- 3D Canvas Container -->
-  <canvas id="three-canvas"></canvas>
+  <canvas id="three-canvas" aria-hidden="true"></canvas>
   
-  <!-- Main Container -->
   <div class="container">
-    <!-- Header -->
     <header>
       <div class="logo">
-        <i class="fas fa-cube"></i>
-        <h1>NEON TASKS</h1>
+        <i class="fas fa-dragon"></i>
+        <h1>Dragon Tasks</h1>
       </div>
-      <div class="theme-toggle">
+      <button class="theme-toggle" type="button" aria-label="Toggle theme">
         <i class="fas fa-moon" id="theme-icon"></i>
-      </div>
+      </button>
     </header>
 
-    <!-- Main Content -->
     <main>
-      <!-- Input Section -->
       <div class="input-section">
         <div class="input-wrapper">
           <input 
@@ -41,16 +36,15 @@
             placeholder="Add a new task..." 
             autocomplete="off"
           />
-          <button id="add-button" type="button">
+          <button id="add-button" type="button" aria-label="Add task">
             <i class="fas fa-plus"></i>
           </button>
         </div>
       </div>
 
-      <!-- Tasks Section -->
       <div class="tasks-section">
         <div class="tasks-header">
-          <h2><i class="fas fa-tasks"></i> Your Tasks</h2>
+          <h2><i class="fas fa-list-check"></i> Today</h2>
           <span class="task-count" id="task-count">0</span>
         </div>
         <div id="task-list">
@@ -59,9 +53,8 @@
       </div>
     </main>
 
-    <!-- Footer -->
     <footer>
-      <p><i class="fas fa-code"></i> Built with 3D & neon</p>
+      <p><i class="fas fa-fire-flame-curved"></i> Clear the list. Wake the dragon.</p>
     </footer>
   </div>
 
