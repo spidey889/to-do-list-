@@ -15,15 +15,24 @@ let tasks = [];
 let theme = localStorage.getItem('theme') || 'dark';
 
 // Three.js Variables
-let scene, camera, renderer, objects = [];
-let dragonfly, dragonflyWings = [];
+let scene, camera, renderer, dragonfly, dragonflyWings = [];
+let clock = new THREE.Clock();
 
 // Initialize
 window.onload = function () {
   loadTheme();
   loadTasks();
-  initThreeJS();
-  animateThreeJS();
+  
+  // Check if Three.js is loaded
+  if (typeof THREE !== 'undefined') {
+    initThreeJS();
+    animateThreeJS();
+  } else {
+    console.error('Three.js not loaded!');
+    // Fallback: Show a message in the canvas area
+    const canvas = document.getElementById('three-canvas');
+    canvas.style.background = 'rgba(255, 0, 0, 0.1)';
+  }
   
   // Event Listeners
   addButton.onclick = addTask;
@@ -46,7 +55,7 @@ window.onload = function () {
 function loadTheme() {
   document.documentElement.setAttribute('data-theme', theme);
   updateThemeIcon();
-  updateThreeJSTheme();
+  if (typeof THREE !== 'undefined') updateThreeJSTheme();
 }
 
 function toggleTheme() {
@@ -69,7 +78,7 @@ function initThreeJS() {
   
   // Camera
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.z = 5;
+  camera.position.set(0, 0, 5);
   
   // Renderer
   renderer = new THREE.WebGLRenderer({ 
@@ -78,7 +87,8 @@ function initThreeJS() {
     antialias: true 
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
   
   // Add ambient light
   const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
@@ -94,104 +104,14 @@ function initThreeJS() {
   pointLight.position.set(0, 0, -5);
   scene.add(pointLight);
   
-  // Create 3D objects
-  create3DObjects();
-  
   // Create dragonfly
   createDragonfly();
   
+  // Create some floating particles
+  createParticles();
+  
   // Handle window resize
   onWindowResize();
-}
-
-function create3DObjects() {
-  // Clear existing objects
-  objects.forEach(obj => scene.remove(obj));
-  objects = [];
-  
-  // Colors based on theme
-  const primaryColor = theme === 'dark' ? 0x00ff88 : 0x00a368;
-  const secondaryColor = theme === 'dark' ? 0x00d4ff : 0x0077b6;
-  const tertiaryColor = theme === 'dark' ? 0xff00aa : 0xcc0077;
-  
-  // Create geometric shapes
-  const geometries = [
-    new THREE.IcosahedronGeometry(0.2, 0),
-    new THREE.OctahedronGeometry(0.3, 0),
-    new THREE.TetrahedronGeometry(0.4, 0),
-    new THREE.TorusGeometry(0.2, 0.08, 8, 16),
-    new THREE.SphereGeometry(0.15, 16, 16)
-  ];
-  
-  const colors = [primaryColor, secondaryColor, tertiaryColor];
-  
-  // Create 10 floating objects
-  for (let i = 0; i < 10; i++) {
-    const geometry = geometries[Math.floor(Math.random() * geometries.length)];
-    const material = new THREE.MeshPhongMaterial({
-      color: colors[Math.floor(Math.random() * colors.length)],
-      transparent: true,
-      opacity: 0.5,
-      shininess: 100,
-      specular: 0x111111
-    });
-    
-    const mesh = new THREE.Mesh(geometry, material);
-    
-    // Random position
-    mesh.position.x = (Math.random() - 0.5) * 15;
-    mesh.position.y = (Math.random() - 0.5) * 15;
-    mesh.position.z = (Math.random() - 0.5) * 10 - 8;
-    
-    // Random rotation
-    mesh.rotation.x = Math.random() * Math.PI;
-    mesh.rotation.y = Math.random() * Math.PI;
-    
-    // Random scale
-    const scale = Math.random() * 0.4 + 0.2;
-    mesh.scale.set(scale, scale, scale);
-    
-    // Add to scene and objects array
-    scene.add(mesh);
-    objects.push(mesh);
-    
-    // Add to animation data
-    mesh.userData = {
-      rotationSpeed: {
-        x: (Math.random() - 0.5) * 0.01,
-        y: (Math.random() - 0.5) * 0.01,
-        z: (Math.random() - 0.5) * 0.01
-      },
-      floatSpeed: Math.random() * 0.5 + 0.1,
-      floatOffset: Math.random() * Math.PI * 2,
-      floatDistance: Math.random() * 2 + 1
-    };
-  }
-  
-  // Add glowing particles
-  for (let i = 0; i < 30; i++) {
-    const particleGeometry = new THREE.SphereGeometry(0.03, 8, 8);
-    const particleMaterial = new THREE.MeshBasicMaterial({
-      color: colors[Math.floor(Math.random() * colors.length)],
-      transparent: true,
-      opacity: 0.6
-    });
-    
-    const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-    
-    particle.position.x = (Math.random() - 0.5) * 20;
-    particle.position.y = (Math.random() - 0.5) * 20;
-    particle.position.z = (Math.random() - 0.5) * 15 - 10;
-    
-    scene.add(particle);
-    objects.push(particle);
-    
-    particle.userData = {
-      floatSpeed: Math.random() * 0.2 + 0.05,
-      floatOffset: Math.random() * Math.PI * 2,
-      floatDistance: Math.random() * 5 + 2
-    };
-  }
 }
 
 function createDragonfly() {
@@ -209,26 +129,37 @@ function createDragonfly() {
   const bodyMaterial = new THREE.MeshPhongMaterial({
     color: bodyColor,
     shininess: 100,
-    specular: 0x111111
+    specular: 0x111111,
+    emissive: bodyColor,
+    emissiveIntensity: 0.3
   });
   const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
   body.rotation.x = Math.PI / 2;
   body.position.z = 0.4;
+  body.castShadow = true;
+  body.receiveShadow = true;
   dragonfly.add(body);
   
   // Head (sphere)
   const headGeometry = new THREE.SphereGeometry(0.06, 16, 16);
   const headMaterial = new THREE.MeshPhongMaterial({
     color: bodyColor,
-    shininess: 100
+    shininess: 100,
+    emissive: bodyColor,
+    emissiveIntensity: 0.3
   });
   const head = new THREE.Mesh(headGeometry, headMaterial);
   head.position.z = 0.8;
+  head.castShadow = true;
   dragonfly.add(head);
   
   // Eyes (2 small spheres)
   const eyeGeometry = new THREE.SphereGeometry(0.02, 8, 8);
-  const eyeMaterial = new THREE.MeshBasicMaterial({ color: eyeColor });
+  const eyeMaterial = new THREE.MeshBasicMaterial({ 
+    color: eyeColor,
+    emissive: eyeColor,
+    emissiveIntensity: 0.8
+  });
   
   const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
   leftEye.position.set(0.03, 0.02, 0.85);
@@ -243,8 +174,9 @@ function createDragonfly() {
   const wingMaterial = new THREE.MeshPhongMaterial({
     color: wingColor,
     transparent: true,
-    opacity: 0.6,
-    side: THREE.DoubleSide
+    opacity: 0.7,
+    side: THREE.DoubleSide,
+    shininess: 50
   });
   
   // Front wings
@@ -277,7 +209,7 @@ function createDragonfly() {
   dragonfly.position.set(0, 0, -3);
   dragonfly.userData = {
     pathRadius: 4,
-    pathSpeed: 0.003,
+    pathSpeed: 0.002,
     pathOffset: Math.random() * Math.PI * 2,
     wingFlapSpeed: 0.1,
     wingFlapAmount: 0.2,
@@ -286,57 +218,66 @@ function createDragonfly() {
   };
 }
 
-function updateThreeJSTheme() {
-  const primaryColor = theme === 'dark' ? 0x00ff88 : 0x00a368;
-  const secondaryColor = theme === 'dark' ? 0x00d4ff : 0x0077b6;
-  const tertiaryColor = theme === 'dark' ? 0xff00aa : 0xcc0077;
-  const colors = [primaryColor, secondaryColor, tertiaryColor];
+function createParticles() {
+  const particleCount = 20;
+  const colors = [0x00ff88, 0x00d4ff, 0xff00aa];
   
-  objects.forEach((obj, index) => {
-    if (obj.material && !obj.userData.isDragonfly) {
-      obj.material.color.set(colors[index % colors.length]);
+  for (let i = 0; i < particleCount; i++) {
+    const geometry = new THREE.SphereGeometry(0.05, 8, 8);
+    const material = new THREE.MeshBasicMaterial({
+      color: colors[Math.floor(Math.random() * colors.length)],
+      transparent: true,
+      opacity: 0.8
+    });
+    
+    const particle = new THREE.Mesh(geometry, material);
+    particle.position.set(
+      (Math.random() - 0.5) * 20,
+      (Math.random() - 0.5) * 20,
+      (Math.random() - 0.5) * 10 - 5
+    );
+    
+    scene.add(particle);
+    
+    particle.userData = {
+      floatSpeed: Math.random() * 0.2 + 0.05,
+      floatOffset: Math.random() * Math.PI * 2,
+      floatDistance: Math.random() * 3 + 1
+    };
+  }
+}
+
+function updateThreeJSTheme() {
+  if (!dragonfly) return;
+  
+  const bodyColor = theme === 'dark' ? 0x00ff88 : 0x00a368;
+  const wingColor = theme === 'dark' ? 0x00d4ff : 0x0077b6;
+  const eyeColor = theme === 'dark' ? 0xff00aa : 0xcc0077;
+  
+  dragonfly.children.forEach(child => {
+    if (child.geometry && child.geometry.type === 'CylinderGeometry') {
+      child.material.color.set(bodyColor);
+      child.material.emissive.set(bodyColor);
+    } else if (child.geometry && child.geometry.type === 'SphereGeometry') {
+      if (Math.abs(child.position.z - 0.85) < 0.06) {
+        child.material.color.set(eyeColor);
+      } else {
+        child.material.color.set(bodyColor);
+        if (child.material.emissive) {
+          child.material.emissive.set(bodyColor);
+        }
+      }
+    } else if (child.geometry && child.geometry.type === 'PlaneGeometry') {
+      child.material.color.set(wingColor);
     }
   });
-  
-  // Update dragonfly colors
-  if (dragonfly) {
-    const bodyColor = theme === 'dark' ? 0x00ff88 : 0x00a368;
-    const wingColor = theme === 'dark' ? 0x00d4ff : 0x0077b6;
-    const eyeColor = theme === 'dark' ? 0xff00aa : 0xcc0077;
-    
-    dragonfly.children.forEach(child => {
-      if (child.geometry && child.geometry.type === 'CylinderGeometry') {
-        child.material.color.set(bodyColor);
-      } else if (child.geometry && child.geometry.type === 'SphereGeometry') {
-        if (child.position.z > 0.7) {
-          child.material.color.set(eyeColor);
-        } else {
-          child.material.color.set(bodyColor);
-        }
-      } else if (child.geometry && child.geometry.type === 'PlaneGeometry') {
-        child.material.color.set(wingColor);
-      }
-    });
-  }
 }
 
 function animateThreeJS() {
   requestAnimationFrame(animateThreeJS);
   
+  const delta = clock.getDelta();
   const time = Date.now() * 0.001;
-  
-  // Animate floating objects
-  objects.forEach((obj, index) => {
-    if (obj.userData.rotationSpeed) {
-      obj.rotation.x += obj.userData.rotationSpeed.x;
-      obj.rotation.y += obj.userData.rotationSpeed.y;
-      obj.rotation.z += obj.userData.rotationSpeed.z;
-    }
-    
-    if (obj.userData.floatSpeed) {
-      obj.position.y += Math.sin(time * obj.userData.floatSpeed + obj.userData.floatOffset) * 0.01 * obj.userData.floatDistance;
-    }
-  });
   
   // Animate dragonfly
   if (dragonfly) {
@@ -348,10 +289,11 @@ function animateThreeJS() {
     dragonfly.position.z = -3 + Math.sin(time * data.pathSpeed * 0.5 + data.pathOffset) * data.pathRadius * 0.3;
     
     // Rotate dragonfly to face direction of motion
-    dragonfly.rotation.y = Math.atan2(
-      Math.cos(time * data.pathSpeed + data.pathOffset),
-      -Math.sin(time * data.pathSpeed + data.pathOffset)
+    const angle = Math.atan2(
+      Math.sin(time * data.pathSpeed + data.pathOffset) * data.pathSpeed * 0.7,
+      Math.cos(time * data.pathSpeed + data.pathOffset) * data.pathSpeed
     );
+    dragonfly.rotation.y = angle;
     
     // Wing flapping
     const wingFlap = Math.sin(time * data.wingFlapSpeed * 2) * data.wingFlapAmount;
@@ -371,10 +313,18 @@ function animateThreeJS() {
     });
   }
   
+  // Animate particles
+  scene.children.forEach(child => {
+    if (child.userData.floatSpeed) {
+      child.position.y += Math.sin(time * child.userData.floatSpeed + child.userData.floatOffset) * 0.01 * child.userData.floatDistance;
+    }
+  });
+  
   renderer.render(scene, camera);
 }
 
 function onWindowResize() {
+  if (!camera || !renderer) return;
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
