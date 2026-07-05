@@ -1,60 +1,100 @@
-// Simple old-school to-do list
-var tasks = [];
+// Modern To-Do List
+let tasks = [];
 
+// Load tasks from localStorage on page load
 window.onload = function () {
-  var input = document.getElementById('task-input');
-  var addButton = document.getElementById('add-button');
-
+  const savedTasks = localStorage.getItem('tasks');
+  if (savedTasks) {
+    tasks = JSON.parse(savedTasks);
+  }
+  
+  const input = document.getElementById('task-input');
+  const addButton = document.getElementById('add-button');
+  
   addButton.onclick = addTask;
   input.onkeypress = function (e) {
     if (e.key === 'Enter') {
       addTask();
     }
   };
+  
+  renderTasks();
 };
 
+// Add a new task
 function addTask() {
-  var input = document.getElementById('task-input');
-  var text = input.value.trim();
+  const input = document.getElementById('task-input');
+  const text = input.value.trim();
+  
   if (!text) {
+    input.style.borderColor = '#ff4757';
+    setTimeout(() => {
+      input.style.borderColor = '#e0e0e0';
+    }, 1000);
     return;
   }
-  var task = { id: Date.now(), text: text, done: false };
+  
+  const task = {
+    id: Date.now(),
+    text: text,
+    done: false
+  };
+  
   tasks.push(task);
+  saveTasks();
   input.value = '';
   renderTasks();
 }
 
+// Toggle task completion
 function toggleTask(id) {
-  for (var i = 0; i < tasks.length; i++) {
-    if (tasks[i].id === id) {
-      tasks[i].done = !tasks[i].done;
-      break;
-    }
+  const taskIndex = tasks.findIndex(task => task.id === id);
+  if (taskIndex !== -1) {
+    tasks[taskIndex].done = !tasks[taskIndex].done;
+    saveTasks();
+    renderTasks();
   }
+}
+
+// Delete a task
+function deleteTask(id, event) {
+  event.stopPropagation(); // Prevent toggling when deleting
+  tasks = tasks.filter(task => task.id !== id);
+  saveTasks();
   renderTasks();
 }
 
+// Save tasks to localStorage
+function saveTasks() {
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+}
+
+// Render all tasks
 function renderTasks() {
-  var list = document.getElementById('task-list');
+  const list = document.getElementById('task-list');
+  
   if (tasks.length === 0) {
-    list.innerHTML = '<p class=\"empty\">No tasks yet.</p>';
+    list.innerHTML = '<p class="empty-message">No tasks yet. Add one above!</p>';
     return;
   }
-  var html = '';
-  for (var i = 0; i < tasks.length; i++) {
-    var task = tasks[i];
-    var cls = 'task-item' + (task.done ? ' completed' : '');
-    html += '<div class=\"' + cls + '\" onclick=\"toggleTask(' + task.id + ')\">';
-    html += escapeHtml(task.text);
-    html += '</div>';
-  }
+  
+  let html = '';
+  tasks.forEach(task => {
+    const taskClass = task.done ? 'task-item completed' : 'task-item';
+    html += `
+      <div class="${taskClass}" onclick="toggleTask(${task.id})">
+        <span class="task-text">${escapeHtml(task.text)}</span>
+        <button class="delete-btn" onclick="deleteTask(${task.id}, event)">×</button>
+      </div>
+    `;
+  });
+  
   list.innerHTML = html;
 }
 
+// Escape HTML to prevent XSS
 function escapeHtml(text) {
-  var div = document.createElement('div');
+  const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
 }
-
